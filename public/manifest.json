@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "wallets": [{
+    "id": "ethereum-wallets",
+    "name": "Ethereum Wallets",
+    "description": "Use MetaMask or WalletConnect to sign NEAR transactions.",
+    "icon": "http://localhost:5173/ethereum.svg",
+    "website": "http://localhost:5173/wallet.html",
+    "version": "0.1.3",
+    "executor": "http://localhost:5173/executor.js",
+    "type": "sandbox",
+    "platform": ["web"],
+    "features": {
+      "signMessage": false, "signTransaction": false,
+      "signAndSendTransaction": true, "signAndSendTransactions": true,
+      "signInWithoutAddKey": true, "signInAndSignMessage": false,
+      "signInWithFunctionCallKey": false, "signDelegateActions": false,
+      "mainnet": true, "testnet": true
+    },
+    "permissions": { "storage": true, "allowsOpen": ["http://localhost:5173/wallet.html"] },
+    "metadata": { "signPageURL": "http://localhost:5173/wallet.html" }
+  }]
+}

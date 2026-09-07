@@ -1,0 +1,44 @@
+import { errorMessage } from './errors';
+import { CHANNEL, type Request } from './types';
+import { networkConfig } from './networks';
+
+export function receiveRequest(allowedOrigins: string[]): Promise<{ payload: Request; origin: string; respond: (result: unknown) => void; fail: (error: unknown) => void }> {
+  const params = new URLSearchParams(location.hash.slice(1));
+  const requestId = params.get('requestId');
+  const origin = params.get('origin');
+  if (!window.opener) return Promise.reject(new Error('This wallet tab is not connected to a dApp window. Return to the demo and choose Ethereum Wallets to open a new request.'));
+  if (!requestId || !/^[a-f0-9]{64}$/.test(requestId)) return Promise.reject(new Error('The wallet URL is missing a valid request ID. Return to the demo and choose Ethereum Wallets again.'));
+  if (!origin || !allowedOrigins.includes(origin)) return Promise.reject(new Error(`The requesting dApp origin (${origin ?? 'missing'}) is not allowed by this wallet. Allowed origins: ${allowedOrigins.join(', ')}.`));
+  return new Promise((resolve, reject) => {
+    const opener = window.opener;
+    const post = (body: object) => opener.postMessage({ channel: CHANNEL, requestId, ...body }, origin);
+    let replied = false;
+    const finish = (body: object) => { if (!replied) { replied = true; post(body); } };
+    const handler = (event: MessageEvent) => {
+      const message = event.data;
+      if (event.source !== opener || event.origin !== origin || message?.channel !== CHANNEL || message?.requestId !== requestId || message?.type !== 'REQUEST') return;
+      clearTimeout(timeout);
+      clearInterval(readyRetry);
+      window.removeEventListener('message', handler);
+      try {
+        const payload = message.payload as Request;
+        networkConfig(payload.network);
+        if (!['signIn', 'signAndSendTransaction', 'signAndSendTransactions'].includes(payload.kind)) throw new Error('Unsupported request');
+        if (payload.addFunctionCallKey) throw new Error('Sign-in access keys are not supported');
+        resolve({ payload, origin,
+          respond: result => finish({ type: 'RESULT', result }),
+          fail: error => finish({ type: 'ERROR', error: errorMessage(error) }),
+        });
+      } catch (error) { finish({ type: 'ERROR', error: errorMessage(error) }); reject(error); }
+    };
+    const timeout = setTimeout(() => {
+      clearInterval(readyRetry);
+      window.removeEventListener('message', handler);
+      reject(new Error('The dApp did not send a request. Close this window and choose Ethereum Wallets again in the dApp.'));
+    }, 30_000);
+    window.addEventListener('message', handler);
+    // The opener's forwarding listener may not yet be ready when this page loads.
+    const readyRetry = setInterval(() => post({ type: 'READY' }), 500);
+    post({ type: 'READY' });
+  });
+}
