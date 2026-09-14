@@ -21,10 +21,27 @@ beforeEach(() => {
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('approval page handshake', () => {
+  it('rejects a manually opened wallet URL even with valid origin and request parameters', async () => {
+    await expect(receiveRequest([origin])).rejects.toThrow('not connected to a dApp window');
+  });
+  it.each(['', 'null', '*', 'file:///tmp/app.html', 'https://app.com/path', 'https://app.com/'])('rejects invalid or missing origin %s', async claimed => {
+    Object.assign(target, { opener: { postMessage: vi.fn() } });
+    vi.stubGlobal('location', { hash: `#${new URLSearchParams({ requestId, origin: claimed })}` });
+    await expect(receiveRequest([claimed])).rejects.toThrow('valid dApp origin');
+  });
+  it('accepts sign-out only through the authenticated handshake', async () => {
+    const opener = { postMessage: vi.fn() };
+    Object.assign(target, { opener });
+    const pending = receiveRequest([origin]);
+    deliver({ channel: CHANNEL, requestId, type: 'REQUEST', payload: { kind: 'signOut', network: 'testnet', origin: 'https://victim.com' } }, opener);
+    const request = await pending;
+    expect(request.origin).toBe(origin);
+    expect(request.payload.kind).toBe('signOut');
+  });
   it('reports onboarding errors without closing the wallet error screen', async () => {
     const popup = { postMessage: vi.fn(), close: vi.fn(), closed: false, windowIdPromise: Promise.resolve('popup') };
     const selector = { location: origin, open: vi.fn((_url: string) => popup) };
-    const pending = requestWallet(selector, `${origin}/wallet.html`, payload);
+    const pending = requestWallet(selector, `${origin}/`, payload);
     const rejected = expect(pending).rejects.toThrow('Onboarding failed');
     const url = new URL(selector.open.mock.calls[0][0]);
     const id = new URLSearchParams(url.hash.slice(1)).get('requestId');
@@ -75,7 +92,7 @@ describe('approval page handshake', () => {
   it('resends the request when a refreshed wallet page announces READY again', async () => {
     const popup = { postMessage: vi.fn(), close: vi.fn(), closed: false, windowIdPromise: Promise.resolve('popup') };
     const selector = { location: origin, open: vi.fn((_url: string) => popup) };
-    const pending = requestWallet(selector, `${origin}/wallet.html`, payload);
+    const pending = requestWallet(selector, `${origin}/`, payload);
     const url = new URL(selector.open.mock.calls[0][0]);
     const id = new URLSearchParams(url.hash.slice(1)).get('requestId');
     const ready = { channel: CHANNEL, requestId: id, type: 'READY' };

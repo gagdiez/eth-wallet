@@ -4,5 +4,5 @@
     "lib": ["ES2022", "DOM"], "strict": true, "skipLibCheck": true,
     "noEmit": true, "types": ["vite/client", "node"]
   },
-  "include": ["src", "wallet", "example", "tests", "vite.config.ts"]
+  "include": ["src", "wallet", "tests", "vite.config.ts"]
 }

@@ -64,7 +64,11 @@ const wallet = {
     const accountId = await window.selector.storage.get(key(data.network ?? 'testnet'));
     return accountId ? [{ accountId }] : [];
   },
-  async signOut(data: any = {}) { await window.selector.storage.remove(key(data.network ?? 'testnet')); },
+  async signOut(data: any = {}) {
+    const network = data.network ?? 'testnet';
+    await requestWallet(window.selector, this.manifest.metadata.signPageURL, { kind: 'signOut', network });
+    await window.selector.storage.remove(key(network));
+  },
   async send(data: any, kind: Request['kind']) {
     const network = data.network ?? 'testnet';
     const accountId = await window.selector.storage.get(key(network));

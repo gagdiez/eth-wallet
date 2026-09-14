@@ -6,6 +6,10 @@ export function receiveRequest(allowedOrigins: string[]): Promise<{ payload: Req
   const params = new URLSearchParams(location.hash.slice(1));
   const requestId = params.get('requestId');
   const origin = params.get('origin');
+  try {
+    const url = new URL(origin ?? '');
+    if (!['http:', 'https:'].includes(url.protocol) || url.origin !== origin) throw new Error();
+  } catch { return Promise.reject(new Error('A valid dApp origin is required. Open the wallet from your dApp.')); }
   if (!window.opener) return Promise.reject(new Error('This wallet tab is not connected to a dApp window. Return to the demo and choose Ethereum Wallets to open a new request.'));
   if (!requestId || !/^[a-f0-9]{64}$/.test(requestId)) return Promise.reject(new Error('The wallet URL is missing a valid request ID. Return to the demo and choose Ethereum Wallets again.'));
   if (!origin || !allowedOrigins.includes(origin)) return Promise.reject(new Error(`The requesting dApp origin (${origin ?? 'missing'}) is not allowed by this wallet. Allowed origins: ${allowedOrigins.join(', ')}.`));
@@ -23,9 +27,10 @@ export function receiveRequest(allowedOrigins: string[]): Promise<{ payload: Req
       try {
         const payload = message.payload as Request;
         networkConfig(payload.network);
-        if (!['signIn', 'signAndSendTransaction', 'signAndSendTransactions'].includes(payload.kind)) throw new Error('Unsupported request');
+        if (!['signIn', 'signOut', 'signAndSendTransaction', 'signAndSendTransactions'].includes(payload.kind)) throw new Error('Unsupported request');
         if (payload.addFunctionCallKey) throw new Error('Sign-in access keys are not supported');
-        resolve({ payload, origin,
+        // Use the browser-authenticated sender, never an origin claimed in the payload.
+        resolve({ payload, origin: event.origin,
           respond: result => finish({ type: 'RESULT', result }),
           fail: error => finish({ type: 'ERROR', error: errorMessage(error) }),
         });

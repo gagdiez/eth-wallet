@@ -6,7 +6,7 @@ export type Provider = {
 export type Action = { type: string; params?: any };
 export type Transaction = { receiverId: string; actions: Action[] };
 export type Request = {
-  kind: 'signIn' | 'signAndSendTransaction' | 'signAndSendTransactions';
+  kind: 'signIn' | 'signOut' | 'signAndSendTransaction' | 'signAndSendTransactions';
   network: Network;
   signerId?: string;
   receiverId?: string;

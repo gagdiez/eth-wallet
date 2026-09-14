@@ -1,4 +1,5 @@
 import { errorMessage } from '../src/errors';
+import { OriginGrants, withWalletSession } from '../src/grants';
 import { receiveRequest } from '../src/sign-page';
 import { EthereumNearWallet } from '../src/wallet';
 import { encodeTransactions } from '../src/encoding';
@@ -7,10 +8,10 @@ import type { Transaction } from '../src/types';
 import './wallet.css';
 
 document.querySelector('#app')!.innerHTML = `
-  <div class="brand"><img src="/ethereum.svg" alt=""><span>Ethereum Wallets <span class="brand-divider">/</span> NEAR</span></div>
+  <div class="brand"><img src="./ethereum.svg" alt=""><span>Ethereum Wallets <span class="brand-divider">/</span> NEAR</span></div>
   <article class="approval-card" aria-labelledby="title">
     <header class="card-header"><span id="network" class="network-badge">NEAR</span></header>
-    <div class="connection-art" aria-hidden="true"><span class="chain-icon"><img src="/ethereum.svg" alt=""></span><span class="connection-dots">···</span><span class="near-icon"><img src="/near.svg" alt=""></span></div>
+    <div class="connection-art" aria-hidden="true"><span class="chain-icon"><img src="./ethereum.svg" alt=""></span><span class="connection-dots">···</span><span class="near-icon"><img src="./near.svg" alt=""></span></div>
     <h1 id="title">Connect your wallet</h1>
     <div id="origin" class="origin-pill" hidden></div>
     <p class="explanation">Use your Ethereum wallet on NEAR</p>
@@ -63,24 +64,44 @@ function showTransactions(transactions: Transaction[]) {
 async function main() {
   setBusy(true, 'Loading…');
   showError();
-  const defaultOrigins = import.meta.env.DEV
-    ? `${location.origin},http://127.0.0.1:5174,http://localhost:5174`
-    : location.origin;
+  const defaultOrigins = location.origin;
   const allowedOrigins = (import.meta.env.VITE_ALLOWED_ORIGINS || defaultOrigins).split(',').map((s: string) => s.trim());
   const request = await receiveRequest(allowedOrigins);
   const { payload } = request;
+  const grants = new OriginGrants(localStorage);
+  if (payload.kind === 'signOut') {
+    setBusy(true, 'Disconnecting…');
+    try {
+      await withWalletSession(async () => { grants.revoke(request.origin, payload.network); });
+      request.respond(null);
+      setBusy(true, 'Disconnected');
+    } catch (error) {
+      request.fail(error);
+      showError(errorMessage(error));
+      setBusy(false, 'Disconnect failed');
+      approve.disabled = true;
+    }
+    return;
+  }
   const isLogin = payload.kind === 'signIn';
   el('network').textContent = payload.network === 'testnet' ? 'NEAR Testnet' : 'NEAR Mainnet';
-  el('title').textContent = isLogin ? 'Connect your wallet' : 'Review transaction';
-  el('origin').textContent = new URL(request.origin).host;
+  el('title').textContent = isLogin ? 'Connect to this site' : 'Review transaction';
+  el('origin').textContent = request.origin;
   el('origin').hidden = false;
   const txs: Transaction[] = isLogin ? [] : payload.kind === 'signAndSendTransactions' ? payload.transactions! : [{ receiverId: payload.receiverId!, actions: payload.actions! }];
   try {
     if (!isLogin) {
       if (!payload.signerId) throw new Error('Missing signing account');
+      grants.require(request.origin, payload.network, payload.signerId);
       encodeTransactions(txs, payload.signerId as `0x${string}`, payload.network);
     }
-  } catch (error) { request.fail(error); throw error; }
+  } catch (error) {
+    request.fail(error);
+    showError(errorMessage(error));
+    setBusy(false, 'Request rejected');
+    approve.disabled = true;
+    return;
+  }
   if (!isLogin) {
     showTransactions(txs);
     el('raw-details').hidden = false;
@@ -94,31 +115,36 @@ async function main() {
     showError();
     let submissionStarted = false;
     try {
-      const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim();
-      if (!projectId) {
-        console.error('Configure VITE_WALLETCONNECT_PROJECT_ID in .env.local and restart Vite.');
-        throw new Error('Wallet connection is not configured yet. Please try again once setup is complete.');
-      }
-      const { chooseAppKitWallet } = await import('../src/appkit');
-      const provider = await chooseAppKitWallet(payload.network, projectId, { reuseConnection: !isLogin });
-      setBusy(true, 'Confirm in wallet…');
-      const wallet = new EthereumNearWallet(provider, payload.network, (_message, stage) => {
-        const labels = { checking: 'Checking account…', onboarding: 'Approve setup…', confirming: 'Confirm in wallet…', submitted: 'Confirming…' };
-        setBusy(true, labels[stage]);
+      setBusy(true, 'Waiting for wallet…');
+      await withWalletSession(async () => {
+        if (!isLogin) grants.require(request.origin, payload.network, payload.signerId!);
+        const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim();
+        if (!projectId) {
+          console.error('Configure VITE_WALLETCONNECT_PROJECT_ID in .env.local and restart Vite.');
+          throw new Error('Wallet connection is not configured yet. Please try again once setup is complete.');
+        }
+        const { chooseAppKitWallet } = await import('../src/appkit');
+        const provider = await chooseAppKitWallet(payload.network, projectId, { reuseConnection: true });
+        setBusy(true, 'Confirm in wallet…');
+        const wallet = new EthereumNearWallet(provider, payload.network, (_message, stage) => {
+          const labels = { checking: 'Checking account…', onboarding: 'Approve setup…', confirming: 'Confirm in wallet…', submitted: 'Confirming…' };
+          setBusy(true, labels[stage]);
+        });
+        if (isLogin) {
+          // Onboarding can submit a transaction. Surface errors to the dApp rather
+          // than leave an approval button that could blindly resubmit after a timeout.
+          submissionStarted = true;
+          const address = await wallet.signIn();
+          grants.approve(request.origin, payload.network, address);
+          request.respond([{ accountId: address }]);
+        } else {
+          const address = await wallet.connect();
+          if (address !== payload.signerId) throw new Error('This wallet account differs from the connected NEAR account. Reconnect the dApp with the account you want to use.');
+          submissionStarted = true;
+          const outcomes = await wallet.sendTransactions(txs, address);
+          request.respond(payload.kind === 'signAndSendTransaction' ? outcomes[0] : outcomes);
+        }
       });
-      if (isLogin) {
-        // Onboarding can submit a transaction. Surface errors to the dApp rather
-        // than leave an approval button that could blindly resubmit after a timeout.
-        submissionStarted = true;
-        const address = await wallet.signIn();
-        request.respond([{ accountId: address }]);
-      } else {
-        const address = await wallet.connect();
-        if (address !== payload.signerId) throw new Error('This wallet account differs from the connected NEAR account. Reconnect the dApp with the account you want to use.');
-        submissionStarted = true;
-        const outcomes = await wallet.sendTransactions(txs, address);
-        request.respond(payload.kind === 'signAndSendTransaction' ? outcomes[0] : outcomes);
-      }
       setBusy(false, isLogin ? 'Connected' : 'Complete');
       approve.disabled = true;
     } catch (error) {
@@ -132,7 +158,7 @@ async function main() {
     }
   };
   approve.onclick = () => { void connect(); };
-  if (isLogin && import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim()) void connect();
+  // Connecting requires an explicit click on this page, even with a restored provider.
 }
 async function loadRequest() {
   try { await main(); }
