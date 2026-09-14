@@ -22,17 +22,26 @@ afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals()
 
 describe('approval page handshake', () => {
   it('rejects a manually opened wallet URL even with valid origin and request parameters', async () => {
-    await expect(receiveRequest([origin])).rejects.toThrow('not connected to a dApp window');
+    await expect(receiveRequest()).rejects.toThrow('not connected to a dApp window');
   });
   it.each(['', 'null', '*', 'file:///tmp/app.html', 'https://app.com/path', 'https://app.com/'])('rejects invalid or missing origin %s', async claimed => {
     Object.assign(target, { opener: { postMessage: vi.fn() } });
     vi.stubGlobal('location', { hash: `#${new URLSearchParams({ requestId, origin: claimed })}` });
-    await expect(receiveRequest([claimed])).rejects.toThrow('valid dApp origin');
+    await expect(receiveRequest()).rejects.toThrow('valid dApp origin');
+  });
+  it('accepts an authenticated request from any HTTP(S) dApp origin', async () => {
+    const dAppOrigin = 'https://evil.com';
+    const opener = { postMessage: vi.fn() };
+    Object.assign(target, { opener });
+    vi.stubGlobal('location', { hash: `#${new URLSearchParams({ requestId, origin: dAppOrigin })}` });
+    const pending = receiveRequest();
+    deliver({ channel: CHANNEL, requestId, type: 'REQUEST', payload }, opener, dAppOrigin);
+    expect((await pending).origin).toBe(dAppOrigin);
   });
   it('accepts sign-out only through the authenticated handshake', async () => {
     const opener = { postMessage: vi.fn() };
     Object.assign(target, { opener });
-    const pending = receiveRequest([origin]);
+    const pending = receiveRequest();
     deliver({ channel: CHANNEL, requestId, type: 'REQUEST', payload: { kind: 'signOut', network: 'testnet', origin: 'https://victim.com' } }, opener);
     const request = await pending;
     expect(request.origin).toBe(origin);
@@ -54,7 +63,7 @@ describe('approval page handshake', () => {
   it('retries READY until the opener delivers the request', async () => {
     const opener = { postMessage: vi.fn() };
     Object.assign(target, { opener });
-    const pending = receiveRequest([origin]);
+    const pending = receiveRequest();
     expect(opener.postMessage).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1_000);
     expect(opener.postMessage).toHaveBeenCalledTimes(3);
@@ -66,7 +75,7 @@ describe('approval page handshake', () => {
   it('ignores messages from another origin, window, or request', async () => {
     const opener = { postMessage: vi.fn() };
     Object.assign(target, { opener });
-    const pending = receiveRequest([origin]);
+    const pending = receiveRequest();
     const resolved = vi.fn();
     pending.then(resolved);
     const message = { channel: CHANNEL, requestId, type: 'REQUEST', payload };
@@ -83,7 +92,7 @@ describe('approval page handshake', () => {
   });
   it('shows an actionable error when the dApp cannot deliver the request', async () => {
     Object.assign(target, { opener: { postMessage: vi.fn() } });
-    const pending = receiveRequest([origin]);
+    const pending = receiveRequest();
     const rejected = expect(pending).rejects.toThrow('choose Ethereum Wallets again');
     await vi.advanceTimersByTimeAsync(30_000);
     await rejected;

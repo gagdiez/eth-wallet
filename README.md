@@ -11,9 +11,8 @@ npm run dev
 ```
 
 The wallet and manifest are served at `http://localhost:5173/` and
-`http://localhost:5173/manifest.json`. Set `VITE_ALLOWED_ORIGINS` to the
-comma-separated dApp origins that may use the wallet, then restart after
-changing environment variables.
+`http://localhost:5173/manifest.json`. Restart after changing environment
+variables.
 
 ## Standalone example
 
@@ -48,9 +47,6 @@ Before the first deployment, configure the repository as follows:
    the source.
 2. Add an Actions secret named `VITE_WALLETCONNECT_PROJECT_ID` containing the
    Reown project ID.
-3. Add an Actions variable named `VITE_ALLOWED_ORIGINS` containing the
-   comma-separated origins of dApps allowed to open the wallet (for example,
-   `https://app.example.com,https://another.example.com`).
 
 The published manifest is available at the Pages site URL plus
 `/manifest.json`, and the wallet itself is served at the Pages site root. During
@@ -65,7 +61,7 @@ Login uses the old module's `alwaysOnboardDuringSignIn` flow: fetch `near_getPub
 
 Connections require explicit approval on the wallet page. Grants are stored on the wallet origin for each dApp origin, account, and network; transactions require a matching grant and still require signing approval. Existing connections must reconnect once to create a grant. Disconnect opens the wallet briefly to revoke that site's grant on the selected network, leaving other sites and AppKit connected. If that popup is blocked, disconnect fails rather than claiming the grant was revoked.
 
-Every operation requires a verified opener/message origin and request token; directly opening the wallet URL cannot connect, sign, or revoke grants. The configured origin allowlist still applies. Wallet popups coordinate through Web Locks (required) to serialize provider use and revocation. Clearing wallet-site storage removes grants. Different providers per dApp are not tracked.
+Every operation requires a verified opener/message origin and request token; directly opening the wallet URL cannot connect, sign, or revoke grants. Any HTTP(S) dApp may request a connection, but it cannot impersonate another origin. Wallet popups coordinate through Web Locks (required) to serialize provider use and revocation. Clearing wallet-site storage removes grants. Different providers per dApp are not tracked.
 
 Mainnet and testnet are enabled. Supports transfers, function calls, and ed25519 function-call key changes. One action per transaction; batches run sequentially and may partially complete.
 

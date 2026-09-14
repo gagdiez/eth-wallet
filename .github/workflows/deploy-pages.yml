@@ -40,7 +40,6 @@ jobs:
         env:
           WALLET_BASE_URL: ${{ steps.pages.outputs.base_url }}
           VITE_WALLETCONNECT_PROJECT_ID: ${{ secrets.VITE_WALLETCONNECT_PROJECT_ID }}
-          VITE_ALLOWED_ORIGINS: ${{ vars.VITE_ALLOWED_ORIGINS }}
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v5

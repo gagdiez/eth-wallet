@@ -17,8 +17,8 @@ document.querySelector('#app')!.innerHTML = `
     <p class="muted">Attached gas: 30 Tgas</p><label>Deposit (NEAR)<input id="deposit" value="0"></label><button id="call">Review contract call</button>
     <button id="messages" class="secondary" ${network === 'mainnet' ? 'hidden' : ''}>Read guest-book messages</button></section>
   <section><h2>Result</h2><p id="status" role="status">Ready to connect.</p><div id="links"></div><pre id="result">Final NEAR execution outcomes will appear here.</pre></section>`;
-const manifestUrl = import.meta.env.VITE_WALLET_MANIFEST_URL;
-if (!manifestUrl) throw new Error('Set VITE_WALLET_MANIFEST_URL in .env.local');
+const manifestUrl = import.meta.env.VITE_WALLET_MANIFEST_URL
+  || 'https://evm-on-near.dev/manifest.json';
 const manifestResponse = await fetch(manifestUrl);
 if (!manifestResponse.ok) throw new Error('Could not load the demo wallet manifest');
 const manifest = await manifestResponse.json();

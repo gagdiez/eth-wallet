@@ -2,7 +2,7 @@ import { errorMessage } from './errors';
 import { CHANNEL, type Request } from './types';
 import { networkConfig } from './networks';
 
-export function receiveRequest(allowedOrigins: string[]): Promise<{ payload: Request; origin: string; respond: (result: unknown) => void; fail: (error: unknown) => void }> {
+export function receiveRequest(): Promise<{ payload: Request; origin: string; respond: (result: unknown) => void; fail: (error: unknown) => void }> {
   const params = new URLSearchParams(location.hash.slice(1));
   const requestId = params.get('requestId');
   const origin = params.get('origin');
@@ -12,7 +12,6 @@ export function receiveRequest(allowedOrigins: string[]): Promise<{ payload: Req
   } catch { return Promise.reject(new Error('A valid dApp origin is required. Open the wallet from your dApp.')); }
   if (!window.opener) return Promise.reject(new Error('This wallet tab is not connected to a dApp window. Return to the demo and choose Ethereum Wallets to open a new request.'));
   if (!requestId || !/^[a-f0-9]{64}$/.test(requestId)) return Promise.reject(new Error('The wallet URL is missing a valid request ID. Return to the demo and choose Ethereum Wallets again.'));
-  if (!origin || !allowedOrigins.includes(origin)) return Promise.reject(new Error(`The requesting dApp origin (${origin ?? 'missing'}) is not allowed by this wallet. Allowed origins: ${allowedOrigins.join(', ')}.`));
   return new Promise((resolve, reject) => {
     const opener = window.opener;
     const post = (body: object) => opener.postMessage({ channel: CHANNEL, requestId, ...body }, origin);

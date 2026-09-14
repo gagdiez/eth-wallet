@@ -64,9 +64,7 @@ function showTransactions(transactions: Transaction[]) {
 async function main() {
   setBusy(true, 'Loading…');
   showError();
-  const defaultOrigins = location.origin;
-  const allowedOrigins = (import.meta.env.VITE_ALLOWED_ORIGINS || defaultOrigins).split(',').map((s: string) => s.trim());
-  const request = await receiveRequest(allowedOrigins);
+  const request = await receiveRequest();
   const { payload } = request;
   const grants = new OriginGrants(localStorage);
   if (payload.kind === 'signOut') {
