@@ -59,7 +59,7 @@ Login uses the old module's `alwaysOnboardDuringSignIn` flow: fetch `near_getPub
 
 ## Supported scope
 
-Connections require explicit approval on the wallet page. Grants are stored on the wallet origin for each dApp origin, account, and network; transactions require a matching grant and still require signing approval. Existing connections must reconnect once to create a grant. Disconnect opens the wallet briefly to revoke that site's grant on the selected network, leaving other sites and AppKit connected. If that popup is blocked, disconnect fails rather than claiming the grant was revoked.
+Connections require explicit approval on the wallet page. Grants are stored on the wallet origin for each dApp origin, account, and network; transactions require a matching grant and still require signing approval. Existing connections must reconnect once to create a grant. Disconnect opens the wallet briefly, disconnects the shared AppKit provider session, and revokes that site's grant on the selected network. Other sites' grants are left intact. If that popup is blocked, disconnect fails rather than claiming the grant was revoked.
 
 Every operation requires a verified opener/message origin and request token; directly opening the wallet URL cannot connect, sign, or revoke grants. Any HTTP(S) dApp may request a connection, but it cannot impersonate another origin. Wallet popups coordinate through Web Locks (required) to serialize provider use and revocation. Clearing wallet-site storage removes grants. Different providers per dApp are not tracked.
 

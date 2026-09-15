@@ -26,6 +26,15 @@ document.querySelector('#app')!.innerHTML = `
 const el = (id: string) => document.getElementById(id)!;
 const approve = el('approve') as HTMLButtonElement;
 
+function walletConnectProjectId() {
+  const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim();
+  if (!projectId) {
+    console.error('Configure VITE_WALLETCONNECT_PROJECT_ID in .env.local and restart Vite.');
+    throw new Error('Wallet connection is not configured yet. Please try again once setup is complete.');
+  }
+  return projectId;
+}
+
 function setBusy(busy: boolean, label: string) {
   approve.disabled = busy;
   approve.textContent = label;
@@ -70,7 +79,11 @@ async function main() {
   if (payload.kind === 'signOut') {
     setBusy(true, 'Disconnecting…');
     try {
-      await withWalletSession(async () => { grants.revoke(request.origin, payload.network); });
+      await withWalletSession(async () => {
+        const { disconnectAppKitWallet } = await import('../src/appkit');
+        await disconnectAppKitWallet(payload.network, walletConnectProjectId());
+        grants.revoke(request.origin, payload.network);
+      });
       request.respond(null);
       setBusy(true, 'Disconnected');
     } catch (error) {
@@ -116,13 +129,8 @@ async function main() {
       setBusy(true, 'Waiting for wallet…');
       await withWalletSession(async () => {
         if (!isLogin) grants.require(request.origin, payload.network, payload.signerId!);
-        const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim();
-        if (!projectId) {
-          console.error('Configure VITE_WALLETCONNECT_PROJECT_ID in .env.local and restart Vite.');
-          throw new Error('Wallet connection is not configured yet. Please try again once setup is complete.');
-        }
         const { chooseAppKitWallet } = await import('../src/appkit');
-        const provider = await chooseAppKitWallet(payload.network, projectId, { reuseConnection: true });
+        const provider = await chooseAppKitWallet(payload.network, walletConnectProjectId(), { reuseConnection: !isLogin });
         setBusy(true, 'Confirm in wallet…');
         const wallet = new EthereumNearWallet(provider, payload.network, (_message, stage) => {
           const labels = { checking: 'Checking account…', onboarding: 'Approve setup…', confirming: 'Confirm in wallet…', submitted: 'Confirming…' };

@@ -6,8 +6,7 @@ import type { Network, Provider } from './types';
 
 let modal: ReturnType<typeof createAppKit> | undefined;
 
-export async function chooseAppKitWallet(network: Network, projectId: string, options: { reuseConnection?: boolean } = {}): Promise<Provider> {
-  const reuseConnection = options.reuseConnection ?? true;
+function getAppKit(network: Network, projectId: string, enableReconnect: boolean) {
   if (!modal) {
     const config = networkConfig(network);
     const chain = defineChain({
@@ -26,11 +25,23 @@ export async function chooseAppKitWallet(network: Network, projectId: string, op
       features: { analytics: false, email: false, socials: false, swaps: false, onramp: false },
       enableWalletConnect: true, enableEIP6963: true, enableCoinbase: false,
       // Transactions restore the saved session. Explicit sign-in starts a new selection.
-      enableReconnect: reuseConnection, coinbasePreference: 'eoaOnly',
+      enableReconnect, coinbasePreference: 'eoaOnly',
       defaultAccountTypes: { eip155: 'eoa' }, allWallets: 'SHOW',
     });
   }
-  const picker = modal;
+  return modal;
+}
+
+export async function disconnectAppKitWallet(network: Network, projectId: string): Promise<void> {
+  const picker = getAppKit(network, projectId, true);
+  await picker.ready();
+  if (picker.getAccount('eip155')?.isConnected) await picker.disconnect('eip155');
+  await picker.close();
+}
+
+export async function chooseAppKitWallet(network: Network, projectId: string, options: { reuseConnection?: boolean } = {}): Promise<Provider> {
+  const reuseConnection = options.reuseConnection ?? true;
+  const picker = getAppKit(network, projectId, reuseConnection);
   await picker.ready();
   // Also handle a picker already initialized in this page (for example after a retry).
   if (!reuseConnection && picker.getAccount('eip155')?.isConnected) {

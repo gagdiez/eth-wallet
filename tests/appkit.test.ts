@@ -27,6 +27,14 @@ beforeEach(() => {
 });
 
 describe('AppKit handoff', () => {
+  it('disconnects a restored provider session on sign-out', async () => {
+    mock.picker.getAccount.mockReturnValue({ isConnected: true });
+    const { disconnectAppKitWallet } = await import('../src/appkit');
+    await disconnectAppKitWallet('testnet', 'project-id');
+    expect(mock.create).toHaveBeenCalledWith(expect.objectContaining({ enableReconnect: true }));
+    expect(mock.picker.disconnect).toHaveBeenCalledWith('eip155');
+    expect(mock.picker.close).toHaveBeenCalledOnce();
+  });
   it('opens a fresh selection on explicit sign-in instead of returning the previous wallet', async () => {
     const previousProvider = { request: vi.fn() };
     mock.picker.getAccount.mockReturnValue({ isConnected: true });
