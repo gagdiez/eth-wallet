@@ -8,9 +8,8 @@ import type { Transaction } from '../src/types';
 import './wallet.css';
 
 document.querySelector('#app')!.innerHTML = `
-  <div class="brand"><img src="./ethereum.svg" alt=""><span>Ethereum Wallets <span class="brand-divider">/</span> NEAR</span></div>
   <article class="approval-card" aria-labelledby="title">
-    <header class="card-header"><span id="network" class="network-badge">NEAR</span></header>
+    <header class="card-header"><span id="network" class="network-badge">NEAR Testnet</span></header>
     <div class="connection-art" aria-hidden="true"><span class="chain-icon"><img src="./ethereum.svg" alt=""></span><span class="connection-dots">···</span><span class="near-icon"><img src="./near.svg" alt=""></span></div>
     <h1 id="title">Connect your wallet</h1>
     <div id="origin" class="origin-pill" hidden></div>

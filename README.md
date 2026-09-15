@@ -1,6 +1,9 @@
 # Ethereum Wallets for near-connect
 
-A `wallet` module for `near-connect`, that uses **Reown AppKit** and NEP-518 to enable Ethereum wallets to sign transactions on NEAR. It is a drop-in replacement for the old wallet-selector EVM integration, and it can be used in any dApp that uses `near-connect`.
+A `wallet` module for `near-connect`, that uses **Reown AppKit** and NEP-518 to
+enable Ethereum wallets to sign transactions on NEAR. It is a drop-in replacement
+for the old wallet-selector EVM integration, and it can be used in any dApp that
+uses `near-connect`.
 
 ## Run the wallet
 
@@ -11,16 +14,13 @@ npm run dev
 ```
 
 The wallet and manifest are served at `http://localhost:5173/` and
-`http://localhost:5173/manifest.json`. Restart after changing environment
-variables.
+`http://localhost:5173/manifest.json`.
 
 ## Standalone example
 
 `example/` is a separate dApp with its own dependencies, configuration, and
-build. It consumes the wallet exclusively through
-`VITE_WALLET_MANIFEST_URL`; the wallet source and local manifest template are
-not imported. You can copy the directory into another repository without the
-rest of this project.
+build. It consumes the wallet exclusively through `VITE_WALLET_MANIFEST_URL`;
+the wallet source and local manifest template are not imported.
 
 See [`example/README.md`](example/README.md) for its setup instructions.
 

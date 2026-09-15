@@ -9,9 +9,9 @@ export function receiveRequest(): Promise<{ payload: Request; origin: string; re
   try {
     const url = new URL(origin ?? '');
     if (!['http:', 'https:'].includes(url.protocol) || url.origin !== origin) throw new Error();
-  } catch { return Promise.reject(new Error('A valid dApp origin is required. Open the wallet from your dApp.')); }
-  if (!window.opener) return Promise.reject(new Error('This wallet tab is not connected to a dApp window. Return to the demo and choose Ethereum Wallets to open a new request.'));
-  if (!requestId || !/^[a-f0-9]{64}$/.test(requestId)) return Promise.reject(new Error('The wallet URL is missing a valid request ID. Return to the demo and choose Ethereum Wallets again.'));
+  } catch { return Promise.reject(new Error('Open the wallet through your dApp')); }
+  if (!window.opener) return Promise.reject(new Error('This wallet tab is not connected to a dApp'));
+  if (!requestId || !/^[a-f0-9]{64}$/.test(requestId)) return Promise.reject(new Error('The wallet URL is missing a valid request ID'));
   return new Promise((resolve, reject) => {
     const opener = window.opener;
     const post = (body: object) => opener.postMessage({ channel: CHANNEL, requestId, ...body }, origin);
@@ -24,7 +24,7 @@ export function receiveRequest(): Promise<{ payload: Request; origin: string; re
       clearInterval(readyRetry);
       window.removeEventListener('message', handler);
       try {
-        const payload = message.payload as Request;
+        const payload = { ...message.payload, network: message.payload?.network ?? 'testnet' } as Request;
         networkConfig(payload.network);
         if (!['signIn', 'signOut', 'signAndSendTransaction', 'signAndSendTransactions'].includes(payload.kind)) throw new Error('Unsupported request');
         if (payload.addFunctionCallKey) throw new Error('Sign-in access keys are not supported');
@@ -38,7 +38,7 @@ export function receiveRequest(): Promise<{ payload: Request; origin: string; re
     const timeout = setTimeout(() => {
       clearInterval(readyRetry);
       window.removeEventListener('message', handler);
-      reject(new Error('The dApp did not send a request. Close this window and choose Ethereum Wallets again in the dApp.'));
+      reject(new Error('The dApp did not send a request'));
     }, 30_000);
     window.addEventListener('message', handler);
     // The opener's forwarding listener may not yet be ready when this page loads.
