@@ -6,10 +6,10 @@ import './style.css';
 document.querySelector('#app')!.innerHTML = `
   <span class="badge">${network.toUpperCase()} · NEP-518</span><h1>Your Ethereum wallet.<br>Native NEAR transactions.</h1>
   <p>Connect MetaMask, then transfer NEAR or call a NEAR contract. Each request opens the standalone wallet for review.</p>
-  <section><h2>1. Connect</h2><button id="connect">Choose wallet</button><button id="disconnect" class="secondary">Disconnect</button>
+  <section><h2>1. Connect</h2><button id="connect">Connect</button><button id="disconnect" class="secondary">Disconnect</button>
     <p id="account">Not connected</p><p id="connection-status" role="status"></p><p id="balance" class="muted"></p>
     <p class="muted">New accounts are set up through a sponsored relayer transaction during login. Then add NEAR to the displayed <code>0x…</code> account for transfers and contract calls. This is a native NEAR account; the demo does not use Ethereum ETH.</p></section>
-  <section><h2>2. Send NEAR</h2><label>NEAR recipient<input id="recipient" placeholder="${network === 'testnet' ? 'alice.testnet' : 'alice.near'}"></label>
+  <section><h2>2. Send NEAR</h2><label>NEAR recipient<input id="recipient" value="${network === 'testnet' ? 'influencer.testnet' : 'gagdiez.near'}"></label>
     <label>Amount (NEAR)<input id="amount" value="0.001" inputmode="decimal"></label><button id="transfer">Review transfer</button></section>
   <section><h2>3. Call a NEAR contract</h2><p class="muted">${network === 'testnet' ? 'The guest-book example calls <code>addMessage</code>.' : 'Enter a mainnet contract and method.'} You can choose your own contract and JSON arguments.</p>
     <label>Contract<input id="contract" value="${network === 'testnet' ? 'guest-book.testnet' : ''}"></label><label>Method<input id="method" value="${network === 'testnet' ? 'addMessage' : ''}"></label>
