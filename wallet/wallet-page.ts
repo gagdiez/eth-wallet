@@ -19,9 +19,12 @@ document.querySelector('#app')!.innerHTML = `
     <details id="raw-details" hidden><summary>Transaction details</summary><pre id="details"></pre></details>
     <button id="approve" class="primary" aria-live="polite" disabled>Loading…</button>
     <p id="status" role="alert" class="status error" hidden></p>
-    <footer class="card-footer"><span aria-hidden="true">◇</span> Your keys stay in your wallet.</footer>
+    <footer class="card-footer">
+      <span class="security-note"><span aria-hidden="true">◇</span> Your keys stay in your wallet</span>
+      <a class="how-link" href="./how-it-works/" target="_blank" rel="noopener noreferrer">How it works <span aria-hidden="true">↗</span></a>
+    </footer>
   </article>
-  <p class="page-footer">Built by NEAR Dev</p>`;
+  <p class="page-footer">Built for the NEAR ecosystem</p>`;
 const el = (id: string) => document.getElementById(id)!;
 const approve = el('approve') as HTMLButtonElement;
 

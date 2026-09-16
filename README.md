@@ -13,7 +13,8 @@ npm install
 npm run dev
 ```
 
-The wallet and manifest are served at `http://localhost:5173/` and
+The wallet, its “How it works” explainer, and the manifest are served at
+`http://localhost:5173/`, `http://localhost:5173/how-it-works/`, and
 `http://localhost:5173/manifest.json`.
 
 ## Standalone example
@@ -31,7 +32,7 @@ See [`example/README.md`](example/README.md) for its setup instructions.
 - `src/wallet.ts`: chain/account checks, relayer onboarding, submissions, and final NEAR outcomes.
 - `src/executor.ts` and `src/sign-page.ts`: near-connect sandbox/popup messaging.
 - `public/manifest.json`: wallet manifest template for external dApps.
-- `wallet/`: wallet HTML entry point, approval screen, and styles.
+- `wallet/`: wallet approval screen and the standalone “How it works” page.
 - `example/`: removable standalone dApp that installs and builds independently and consumes the hosted manifest.
 - `vite.config.ts`: wallet-only server and build configuration.
 

@@ -10,5 +10,14 @@ export default defineConfig({
   envDir: resolve('.'),
   publicDir: resolve('public'),
   server: { port: 5173, strictPort: true, cors: true },
-  build: { outDir: resolve('dist'), emptyOutDir: true, rollupOptions: { input: resolve('wallet/index.html') } },
+  build: {
+    outDir: resolve('dist'),
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        wallet: resolve('wallet/index.html'),
+        howItWorks: resolve('wallet/how-it-works/index.html'),
+      },
+    },
+  },
 });

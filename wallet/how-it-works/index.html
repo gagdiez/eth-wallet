@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="How Ethereum wallets can connect to NEAR dApps and approve NEAR transactions through NEP-518.">
+    <title>How it works · Ethereum Wallets for NEAR</title>
+    <link rel="stylesheet" href="./how-it-works.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand" aria-label="Ethereum Wallets for NEAR">
+        <span class="brand-icons" aria-hidden="true">
+          <img src="../ethereum.svg" alt="">
+          <span>→</span>
+          <span class="near-mark"><img src="../near.svg" alt=""></span>
+        </span>
+        <span>Ethereum Wallets <span class="brand-muted">for NEAR</span></span>
+      </div>
+      <a class="source-link" href="https://github.com/gagdiez/eth-wallet" target="_blank" rel="noopener noreferrer">View source <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="eyebrow">Ethereum keys. NEAR transactions.</div>
+        <h1 id="page-title">One familiar wallet,<br>another network.</h1>
+        <p class="lede">This adapter lets an Ethereum wallet such as MetaMask approve actions for a NEAR account with the same <code>0x…</code> address. NEP-518 makes the two transaction models fit together.</p>
+        <aside class="clarification">
+          <span class="info-mark" aria-hidden="true">i</span>
+          <p><strong>It is a wallet bridge, not an asset bridge.</strong> Funds are not wrapped or moved to Ethereum. The account and execution live on NEAR; your Ethereum wallet supplies the signature.</p>
+        </aside>
+      </section>
+
+      <section class="flow-section" aria-labelledby="flow-title">
+        <div class="section-heading">
+          <span class="section-number">01—04</span>
+          <h2 id="flow-title">From click to finality</h2>
+        </div>
+        <ol class="flow">
+          <li>
+            <span class="step-number">01</span>
+            <div class="step-icon" aria-hidden="true">↗</div>
+            <h3>The dApp asks</h3>
+            <p>A NEAR dApp sends a connection or transaction request through <a href="https://github.com/hot-dao/near-connect" target="_blank" rel="noopener noreferrer">near-connect</a>. This approval page verifies the requesting site and shows you what it wants to do.</p>
+          </li>
+          <li>
+            <span class="step-number">02</span>
+            <div class="step-icon" aria-hidden="true">⌁</div>
+            <h3>The action is translated</h3>
+            <p>The requested NEAR transfer, contract call, or limited access-key change is encoded as Ethereum-style calldata defined by <a href="https://github.com/near/NEPs/blob/master/neps/nep-0518.md" target="_blank" rel="noopener noreferrer">NEP-518</a>.</p>
+          </li>
+          <li>
+            <span class="step-number">03</span>
+            <div class="step-icon" aria-hidden="true">◇</div>
+            <h3>You approve</h3>
+            <p>Your Ethereum wallet signs the encoded transaction on NEAR’s EVM-compatible RPC network. The private key stays inside your wallet, and every transaction still needs your approval.</p>
+          </li>
+          <li>
+            <span class="step-number">04</span>
+            <div class="step-icon" aria-hidden="true">✓</div>
+            <h3>NEAR executes</h3>
+            <p>A relayer submits the signed payload to your <code>0x…</code> account on NEAR. Its protocol wallet contract verifies the signature, converts the payload back into a NEAR action, and executes it.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="setup-section" aria-labelledby="setup-title">
+        <div class="setup-copy">
+          <span class="section-number">FIRST CONNECTION</span>
+          <h2 id="setup-title">A small, one-time setup</h2>
+          <p>The first time you connect, you will be asked to approve a setup transaction. It adds a restricted <a href="https://docs.near.org/protocol/accounts-contracts/access-keys#function-call-keys">function-call key</a> that can call only <code>rlp_execute</code> on your own account.</p>
+          <p>The relayer key cannot replace your wallet or add a full-access key. Your Ethereum signature remains the authority for the action encoded inside every request.</p>
+        </div>
+        <div class="account-card" aria-label="Account relationship diagram">
+          <div class="account-row">
+            <span class="mini-icon ethereum"><img src="../ethereum.svg" alt=""></span>
+            <span><small>YOUR WALLET</small><strong>0x71…4c2</strong></span>
+          </div>
+          <div class="account-line"><span>same address</span></div>
+          <div class="account-row">
+            <span class="mini-icon near"><img src="../near.svg" alt=""></span>
+            <span><small>YOUR NEAR ACCOUNT</small><strong>0x71…4c2</strong></span>
+          </div>
+          <div class="key-pill"><span aria-hidden="true">⌁</span> Restricted relayer key · <code>rlp_execute</code> only</div>
+        </div>
+      </section>
+
+      <section class="sources" aria-labelledby="sources-title">
+        <div class="section-heading">
+          <span class="section-number">READ THE SPECS</span>
+          <h2 id="sources-title">Go deeper</h2>
+        </div>
+        <div class="source-grid">
+          <a href="https://github.com/near/NEPs/blob/master/neps/nep-0518.md" target="_blank" rel="noopener noreferrer">
+            <span><small>PROTOCOL SPECIFICATION</small><strong>NEP-518</strong><em>Web3-Compatible Wallets Support</em></span><b aria-hidden="true">↗</b>
+          </a>
+          <a href="https://github.com/near/near-wallet-contract" target="_blank" rel="noopener noreferrer">
+            <span><small>REFERENCE IMPLEMENTATION</small><strong>NEAR wallet contract</strong><em>Signature verification and action execution</em></span><b aria-hidden="true">↗</b>
+          </a>
+          <a href="https://github.com/hot-dao/near-connect" target="_blank" rel="noopener noreferrer">
+            <span><small>DAPP CONNECTION LAYER</small><strong>near-connect</strong><em>Sandboxed wallet integration for NEAR dApps</em></span><b aria-hidden="true">↗</b>
+          </a>
+        </div>
+        <p class="risk-notice"><strong>Important:</strong> This is experimental, non-custodial software provided “as is,” without warranties. Blockchain transactions are irreversible; review every transaction before approving and use the software at your own risk.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Built for the NEAR ecosystem</span>
+      <span>Your keys stay in your wallet</span>
+    </footer>
+  </body>
+</html>
