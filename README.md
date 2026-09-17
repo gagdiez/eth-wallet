@@ -33,7 +33,7 @@ See [`example/README.md`](example/README.md) for its setup instructions.
 - `src/executor.ts` and `src/sign-page.ts`: near-connect sandbox/popup messaging.
 - `public/manifest.json`: wallet manifest template for external dApps.
 - `wallet/`: wallet approval screen and the standalone “How it works” page.
-- `example/`: removable standalone dApp that installs and builds independently and consumes the hosted manifest.
+- `example/`: removable standalone dApp that installs and builds independently, loads the default near-connect wallets, and adds this wallet from its hosted manifest.
 - `vite.config.ts`: wallet-only server and build configuration.
 
 ## Deploy to GitHub Pages

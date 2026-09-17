@@ -1,14 +1,14 @@
-import { NearConnector } from '@hot-labs/near-connect';
+import { NearConnector, type WalletManifest } from '@hot-labs/near-connect';
 import { formatUnits, parseUnits } from 'viem';
 import { queryNear, network, explorer } from './near';
 import './style.css';
 
 document.querySelector('#app')!.innerHTML = `
   <span class="badge">${network.toUpperCase()} · NEP-518</span><h1>Your Ethereum wallet.<br>Native NEAR transactions.</h1>
-  <p>Connect MetaMask, then transfer NEAR or call a NEAR contract. Each request opens the standalone wallet for review.</p>
+  <p>Connect a NEAR wallet, or use MetaMask through Ethereum Wallets, then transfer NEAR or call a NEAR contract.</p>
   <section><h2>1. Connect</h2><button id="connect">Connect</button><button id="disconnect" class="secondary">Disconnect</button>
     <p id="account">Not connected</p><p id="connection-status" role="status"></p><p id="balance" class="muted"></p>
-    <p class="muted">New accounts are set up through a sponsored relayer transaction during login. Then add NEAR to the displayed <code>0x…</code> account for transfers and contract calls. This is a native NEAR account; the demo does not use Ethereum ETH.</p></section>
+    <p class="muted">When using Ethereum Wallets, new <code>0x…</code> accounts are set up through a sponsored relayer transaction during login. Add NEAR to that account for transfers and contract calls; the demo does not use Ethereum ETH.</p></section>
   <section><h2>2. Send NEAR</h2><label>NEAR recipient<input id="recipient" value="${network === 'testnet' ? 'influencer.testnet' : 'gagdiez.near'}"></label>
     <label>Amount (NEAR)<input id="amount" value="0.001" inputmode="decimal"></label><button id="transfer">Review transfer</button></section>
   <section><h2>3. Call a NEAR contract</h2><p class="muted">${network === 'testnet' ? 'The guest-book example calls <code>addMessage</code>.' : 'Enter a mainnet contract and method.'} You can choose your own contract and JSON arguments.</p>
@@ -17,12 +17,14 @@ document.querySelector('#app')!.innerHTML = `
     <p class="muted">Attached gas: 30 Tgas</p><label>Deposit (NEAR)<input id="deposit" value="0"></label><button id="call">Review contract call</button>
     <button id="messages" class="secondary" ${network === 'mainnet' ? 'hidden' : ''}>Read guest-book messages</button></section>
   <section><h2>Result</h2><p id="status" role="status">Ready to connect.</p><div id="links"></div><pre id="result">Final NEAR execution outcomes will appear here.</pre></section>`;
-const manifestUrl = import.meta.env.VITE_WALLET_MANIFEST_URL
+const ethereumManifestUrl = import.meta.env.VITE_WALLET_MANIFEST_URL
   || 'https://evm-on-near.dev/manifest.json';
-const manifestResponse = await fetch(manifestUrl);
+const connector = new NearConnector({ network, autoConnect: false });
+const manifestResponse = await fetch(ethereumManifestUrl);
 if (!manifestResponse.ok) throw new Error('Could not load the demo wallet manifest');
-const manifest = await manifestResponse.json();
-const connector = new NearConnector({ network, manifest, autoConnect: false });
+const ethereumManifest = await manifestResponse.json() as { wallets: WalletManifest[] };
+await connector.whenManifestLoaded;
+await Promise.all(ethereumManifest.wallets.map(wallet => connector.registerWallet(wallet)));
 const element = (id: string) => document.getElementById(id)!;
 const value = (id: string) => (element(id) as HTMLInputElement).value;
 const print = (result: unknown) => { element('result').textContent = JSON.stringify(result, null, 2); };
@@ -45,7 +47,7 @@ function handle(id: string, task: () => Promise<void>) {
   element(id).addEventListener('click', async () => {
     document.querySelectorAll('button').forEach(b => b.disabled = true);
     element('status').textContent = 'Working…';
-    if (id === 'connect') element('connection-status').textContent = 'Connecting and checking account setup…';
+    if (id === 'connect') element('connection-status').textContent = 'Connecting…';
     try { await task(); element('status').textContent = 'Complete.'; }
     catch (error: any) {
       const message = error?.message ?? String(error);
@@ -63,7 +65,7 @@ handle('connect', async () => {
   accountId = (await wallet.getAccounts())[0]?.accountId;
   if (!accountId) throw new Error('The wallet returned no connected account');
   element('connection-status').setAttribute('role', 'status');
-  element('connection-status').textContent = 'Connected. NEAR account setup confirmed.';
+  element('connection-status').textContent = 'Connected.';
   await refresh();
 });
 handle('disconnect', async () => { await connector.disconnect(); accountId = undefined; element('connection-status').textContent = ''; await refresh(); });
