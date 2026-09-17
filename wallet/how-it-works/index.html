@@ -21,6 +21,20 @@
     </header>
 
     <main>
+      <section class="integration-section" aria-labelledby="integration-title">
+        <div class="integration-copy">
+          <span class="section-number">FOR DAPP DEVELOPERS</span>
+          <h2 id="integration-title">Add the manifest. Done.</h2>
+          <p>Yes, adding ETH wallets to your app is as simple as loading the manifest in <code>NearConnector</code>.</p>
+        </div>
+        <pre aria-label="Ethereum Wallets integration example"><code><span class="syntax-keyword">import</span> { <span class="syntax-type">NearConnector</span> } <span class="syntax-keyword">from</span> <span class="syntax-string">'@hot-labs/near-connect'</span>;
+
+<span class="syntax-keyword">const</span> connector = <span class="syntax-keyword">new</span> <span class="syntax-type">NearConnector</span>();
+<span class="syntax-keyword">const</span> manifest = <span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-string">'https://evm-on-near.dev/manifest.json'</span>).<span class="syntax-function">then</span>(r <span class="syntax-operator">=&gt;</span> r.<span class="syntax-function">json</span>());
+<span class="syntax-keyword">await</span> connector.<span class="syntax-property">whenManifestLoaded</span>;
+<span class="syntax-keyword">await</span> <span class="syntax-type">Promise</span>.<span class="syntax-function">all</span>(manifest.wallets.<span class="syntax-function">map</span>(wallet <span class="syntax-operator">=&gt;</span> connector.<span class="syntax-function">registerWallet</span>(wallet)));</code></pre>
+      </section>
+
       <section class="hero" aria-labelledby="page-title">
         <div class="eyebrow">Ethereum keys. NEAR transactions.</div>
         <h1 id="page-title">One familiar wallet,<br>another network.</h1>
